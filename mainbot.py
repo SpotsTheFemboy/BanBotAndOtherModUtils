@@ -411,7 +411,6 @@ class MainBot:
                     all_poll_info = []
                 if target_poll_id > all_poll_info.__len__() or target_poll_id < 1:
                     return
-
                 message_id_of_poll = all_poll_info[target_poll_id - 1]['message_id']
                 info = get_bubble_thread(accesstoken, int(MAIN_BUBBLE_ID), message_id_of_poll)
                 if info['parentmessages'].__len__() == 1:
@@ -424,25 +423,27 @@ class MainBot:
                     return
                 if poll_message['id'] != message_id_of_poll:
                     return
+                print(poll_message)
                 reactions = poll_message['reactionsummary']
-                if all_poll_info[target_poll_id -1]['poll_type'] == 1:
+                if all_poll_info[target_poll_id - 1]['poll_type'] == 1:
                     yescount = 0
                     nocount = 0
                     for reactionData in reactions:
                         if reactionData['emoji'] == '✅':
                             yescount = reactionData['count'] - 1
-                        if reactionData['emoji'] == '❌':
+                        if reactionData['emoji'] == '❌️':
                             nocount = reactionData['count'] - 1
                     if yescount > nocount:
-                        win_message = "The majority voted Yes!"
+                        win_message = "The majority voted yes!"
                     elif nocount > yescount:
-                        win_message = "The majority voted No!"
+                        win_message = "The majority voted no!"
                     else:
                         win_message = "It's a tie!"
                     unique_uuid = str(uuid.uuid4())
                     message_created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
                     send_message_to_bubble(accesstoken, int(MAIN_BUBBLE_ID), message_created_at,
-                                           f"The results for poll #{target_poll_id} are:\n✅ {yescount} people said yes!\n❌ {nocount} people said no!\n{win_message}", INT_USER_ID, unique_uuid, message_id_of_poll)
+                                           f"The results for poll #{target_poll_id} are:\n✅ {yescount} people said yes!\n❌ {nocount} people said no!\n{win_message}",
+                                           INT_USER_ID, unique_uuid, message_id_of_poll)
                 if all_poll_info[target_poll_id - 1]['poll_type'] == 2:
                     to_send_message = f"The results for poll #{target_poll_id} are:\n"
                     most_common_responses = []
