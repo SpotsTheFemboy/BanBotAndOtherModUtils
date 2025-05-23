@@ -317,3 +317,162 @@ class MainBot:
                             for item in self.bans:
                                 openfile.write(str(item) + '\n')
                         await addMemberToBubble(accesstoken, int(MAIN_BUBBLE_ID), [target_user])
+            if msg_text.startswith("!poll "):
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                file_path = os.path.join(script_dir, "pollinfo.json")
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        all_poll_info = json.load(f)
+                except Exception as e:
+                    logger.error(e)
+                    all_poll_info = []
+                message = msg_text_tall[6::]
+                message_to_send = f"Poll #{all_poll_info.__len__()+1}:\n" + message
+                poll_message = self.client.send_message(message_to_send, int(MAIN_BUBBLE_ID), [])
+                send_reaction(accesstoken, '✅️', poll_message['message']['id'])
+                send_reaction(accesstoken, '❌️', poll_message['message']['id'])
+                all_poll_info.append(
+                    {
+                        "message": message,
+                        "message_id": poll_message['message']['id'],
+                        "poll_id": all_poll_info.__len__()+1,
+                        "poll_type": 1
+                    }
+                )
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                file_path = os.path.join(script_dir, "pollinfo.json")
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(all_poll_info, f, indent=4)
+            if msg_text.startswith("!advpoll "):
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                file_path = os.path.join(script_dir, "pollinfo.json")
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        all_poll_info = json.load(f)
+                except Exception as e:
+                    logger.error(e)
+                    all_poll_info = []
+                message = msg_text_tall[9::]
+                message_to_send = f"Poll #{all_poll_info.__len__()+1}:\n" + message
+                poll_message = self.client.send_message(message_to_send, int(MAIN_BUBBLE_ID), [])
+                all_poll_info.append(
+                    {
+                        "message": message,
+                        "message_id": poll_message['message']['id'],
+                        "poll_id": all_poll_info.__len__()+1,
+                        "poll_type": 2
+                    }
+                )
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                file_path = os.path.join(script_dir, "pollinfo.json")
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(all_poll_info, f, indent=4)
+
+            if msg_text.startswith("!getpoll "):
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                file_path = os.path.join(script_dir, "pollinfo.json")
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        all_poll_info = json.load(f)
+                except Exception as e:
+                    logger.error(e)
+                    all_poll_info = []
+
+                if command.__len__() != 2:
+                    return
+                try:
+                    target_poll_id = int(command[1])
+                except Exception as e:
+                    return
+
+                if target_poll_id > all_poll_info.__len__() or target_poll_id < 1:
+                    return
+
+                message_id_of_poll = all_poll_info[target_poll_id - 1]['message_id']
+                unique_uuid = str(uuid.uuid4())
+                message_created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                send_message_to_bubble(accesstoken, int(MAIN_BUBBLE_ID), message_created_at, "Check out the poll here!", INT_USER_ID, unique_uuid, message_id_of_poll)
+            if msg_text.startswith("!checkpoll "):
+
+                if command.__len__() != 2:
+                    return
+
+                try:
+                    target_poll_id = int(command[1])
+                except Exception as e:
+                    return
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                file_path = os.path.join(script_dir, "pollinfo.json")
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        all_poll_info = json.load(f)
+                except Exception as e:
+                    logger.error(e)
+                    all_poll_info = []
+                if target_poll_id > all_poll_info.__len__() or target_poll_id < 1:
+                    return
+
+                message_id_of_poll = all_poll_info[target_poll_id - 1]['message_id']
+                info = get_bubble_thread(accesstoken, int(MAIN_BUBBLE_ID), message_id_of_poll)
+                if info['parentmessages'].__len__() == 1:
+                    poll_message = info['parentmessages'][0]
+                elif info['parentmessages'].__len__() == 0:
+                    if info['messages'].__len__() == 0:
+                        return
+                    poll_message = info['messages'][info['messages'].__len__() - 1]
+                else:
+                    return
+                if poll_message['id'] != message_id_of_poll:
+                    return
+                reactions = poll_message['reactionsummary']
+                if all_poll_info[target_poll_id -1]['poll_type'] == 1:
+                    yescount = 0
+                    nocount = 0
+                    for reactionData in reactions:
+                        if reactionData['emoji'] == '✅':
+                            yescount = reactionData['count'] - 1
+                        if reactionData['emoji'] == '❌':
+                            nocount = reactionData['count'] - 1
+                    if yescount > nocount:
+                        win_message = "The majority voted Yes!"
+                    elif nocount > yescount:
+                        win_message = "The majority voted No!"
+                    else:
+                        win_message = "It's a tie!"
+                    unique_uuid = str(uuid.uuid4())
+                    message_created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                    send_message_to_bubble(accesstoken, int(MAIN_BUBBLE_ID), message_created_at,
+                                           f"The results for poll #{target_poll_id} are:\n✅ {yescount} people said yes!\n❌ {nocount} people said no!\n{win_message}", INT_USER_ID, unique_uuid, message_id_of_poll)
+                if all_poll_info[target_poll_id - 1]['poll_type'] == 2:
+                    to_send_message = f"The results for poll #{target_poll_id} are:\n"
+                    most_common_responses = []
+                    max_count = 0
+
+                    for reactionData in reactions:
+                        count = reactionData['count']
+                        emoji = reactionData['emoji']
+                        people = "person" if count == 1 else "people"
+                        to_send_message += f"{count} {people} said {emoji}!\n"
+
+                        # Track most common responses
+                        if count > max_count:
+                            max_count = count
+                            most_common_responses = [emoji]
+                        elif count == max_count:
+                            most_common_responses.append(emoji)
+
+                    if max_count > 0 and most_common_responses:
+                        common_str = ', '.join(most_common_responses)
+                        to_send_message += f"\nMost common response(s): {common_str} with {max_count} vote(s)."
+
+                    unique_uuid = str(uuid.uuid4())
+                    message_created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                    send_message_to_bubble(
+                        accesstoken,
+                        int(MAIN_BUBBLE_ID),
+                        message_created_at,
+                        to_send_message,
+                        INT_USER_ID,
+                        unique_uuid,
+                        message_id_of_poll
+                    )

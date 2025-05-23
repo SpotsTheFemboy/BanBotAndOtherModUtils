@@ -81,7 +81,39 @@ def verification_code_to_login_token(email, verification_code):
         logger.error(f"An unexpected error occurred: {err}")
         raise BackendError(f"An unexpected error occurred: {err}")
 
+def get_bubble_thread(access_token, bubbleID, threadID):
+    url = f"{API_BASE_URL}api/v1/bubble.history"
+    headers = [
+        "Content-Type: application/json",
+        f"Authorization: Bearer {access_token}"
+    ]
 
+    request_payload = {"bubble_id": bubbleID}
+    if threadID is not None:
+        request_payload["thread_id"] = threadID
+    payload_json = json.dumps(request_payload)
+    buffer = BytesIO()
+    curl = pycurl.Curl()
+
+    try:
+        curl.setopt(pycurl.URL, url)
+        curl.setopt(pycurl.POST, 1)
+        curl.setopt(pycurl.HTTPHEADER, headers)
+        curl.setopt(pycurl.POSTFIELDS, payload_json)
+        curl.setopt(pycurl.WRITEDATA, buffer)
+
+        curl.perform()
+        curl.close()
+
+        response_data = buffer.getvalue().decode("utf-8")
+        return json.loads(response_data)
+
+    except json.JSONDecodeError:
+        logger.error("Failed to parse JSON response")
+        raise BackendError("Failed to parse JSON response")
+    except Exception as err:
+        logger.error(f"An unexpected error occurred: {err}")
+        raise BackendError(f"An unexpected error occurred: {err}")
 #BUBBLE FUNCTIONS
 # Function to get all user's bubbles
 def getUsersBubbles(access_token):
