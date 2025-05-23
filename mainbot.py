@@ -423,13 +423,12 @@ class MainBot:
                     return
                 if poll_message['id'] != message_id_of_poll:
                     return
-                print(poll_message)
                 reactions = poll_message['reactionsummary']
                 if all_poll_info[target_poll_id - 1]['poll_type'] == 1:
                     yescount = 0
                     nocount = 0
                     for reactionData in reactions:
-                        if reactionData['emoji'] == '✅':
+                        if reactionData['emoji'] == '✅️':
                             yescount = reactionData['count'] - 1
                         if reactionData['emoji'] == '❌️':
                             nocount = reactionData['count'] - 1
